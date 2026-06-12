@@ -1,0 +1,12 @@
+{
+  // Cloudflare Workers config: serve the built gallery as static assets.
+  // The photo build itself runs via the project's Build command
+  // (pip install -r requirements.txt && python3 scripts/build.py).
+  "name": "photo-gallery",
+  "compatibility_date": "2026-06-12",
+  "assets": {
+    "directory": "dist",
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "single-page-application"
+  }
+}
