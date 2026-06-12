@@ -30,7 +30,6 @@ IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".tif", ".tiff", ".bmp"}
 
 Image.MAX_IMAGE_PIXELS = 300_000_000  # allow big panoramas
 
-
 MONTHS = {m: i + 1 for i, m in enumerate(
     ["january", "february", "march", "april", "may", "june",
      "july", "august", "september", "october", "november", "december"])}
@@ -166,7 +165,10 @@ def main():
     (OUT / "manifest.json").write_text(
         json.dumps(manifest, ensure_ascii=False, separators=(",", ":")), encoding="utf-8"
     )
-    shutil.copy(SITE / "index.html", OUT / "index.html")
+    # copy all site assets (index.html, banner.jpg, ...) into dist
+    for asset in SITE.iterdir():
+        if asset.is_file() and not asset.name.startswith("."):
+            shutil.copy(asset, OUT / asset.name)
     # modest edge/browser caching for images; manifest stays fresh
     (OUT / "_headers").write_text(
         "/t/*\n  Cache-Control: public, max-age=604800\n"

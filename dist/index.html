@@ -25,6 +25,10 @@
   nav.crumbs .sep { margin: 0 6px; color: var(--line); }
   nav.crumbs .here { color: var(--fg); font-weight: 550; }
 
+  /* home page banner */
+  .banner { max-width: 1280px; margin: 0 auto 4px; padding: 4px 24px 0; }
+  .banner img { width: 100%; height: auto; display: block; border-radius: 10px; }
+
   main { max-width: 1280px; margin: 0 auto; padding: 8px 24px 64px; }
 
   /* album cards */
@@ -46,7 +50,7 @@
   /* masonry photo grid */
   .grid { columns: 4 260px; column-gap: 12px; }
   .grid a { display: block; margin-bottom: 12px; break-inside: avoid; border-radius: 6px; overflow: hidden; background: var(--line); }
-  .grid img { width: 100%; display: block; transition: opacity .15s; }
+  .grid img { width: 100%; height: auto; display: block; transition: opacity .15s; }
   .grid a:hover img { opacity: .9; }
 
   .empty { color: var(--muted); padding: 40px 0; text-align: center; }
@@ -72,6 +76,7 @@
   }
   @media (max-width: 600px) {
     header, main { padding-left: 14px; padding-right: 14px; }
+    .banner { padding-left: 14px; padding-right: 14px; }
     .grid { columns: 2 140px; column-gap: 8px; }
     .grid a { margin-bottom: 8px; }
   }
@@ -82,6 +87,9 @@
   <h1 id="title"><a href="#/">Photos</a></h1>
   <nav class="crumbs" id="crumbs"></nav>
 </header>
+<div class="banner" id="banner" hidden>
+  <img src="banner.jpg" alt="" onerror="document.getElementById('banner').remove()">
+</div>
 <main id="main"><p class="empty">Loading…</p></main>
 
 <div class="lb" id="lb" aria-modal="true" role="dialog">
@@ -117,6 +125,10 @@ function route() {
 }
 
 function render(album) {
+  // banner: home page only
+  const banner = $('banner');
+  if (banner) banner.hidden = !!album.path;
+
   // breadcrumbs
   const crumbs = $('crumbs');
   if (album.path) {
