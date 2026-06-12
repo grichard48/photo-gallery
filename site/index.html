@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Photos</title>
+<style>
+  :root {
+    --bg: #ffffff; --fg: #1a1a1a; --muted: #767676; --line: #ececec;
+    --card: #fafafa; --accent: #2563eb;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--fg);
+    font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  a { color: inherit; text-decoration: none; }
+
+  header {
+    padding: 28px 24px 16px; max-width: 1280px; margin: 0 auto;
+  }
+  h1 { font-size: 1.35rem; font-weight: 650; letter-spacing: -0.01em; }
+  nav.crumbs { margin-top: 6px; font-size: 0.92rem; color: var(--muted); }
+  nav.crumbs a:hover { color: var(--accent); }
+  nav.crumbs .sep { margin: 0 6px; color: var(--line); }
+  nav.crumbs .here { color: var(--fg); font-weight: 550; }
+
+  main { max-width: 1280px; margin: 0 auto; padding: 8px 24px 64px; }
+
+  /* album cards */
+  .albums {
+    display: grid; gap: 16px; margin: 16px 0 28px;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  }
+  .album {
+    background: var(--card); border: 1px solid var(--line); border-radius: 10px;
+    overflow: hidden; transition: box-shadow .15s, transform .15s;
+  }
+  .album:hover { box-shadow: 0 4px 18px rgba(0,0,0,.08); transform: translateY(-2px); }
+  .album .cov { aspect-ratio: 4 / 3; background: var(--line); }
+  .album .cov img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .album .meta { padding: 10px 12px; }
+  .album .meta b { font-weight: 600; font-size: 0.95rem; display: block; }
+  .album .meta span { color: var(--muted); font-size: 0.82rem; }
+
+  /* masonry photo grid */
+  .grid { columns: 4 260px; column-gap: 12px; }
+  .grid a { display: block; margin-bottom: 12px; break-inside: avoid; border-radius: 6px; overflow: hidden; background: var(--line); }
+  .grid img { width: 100%; display: block; transition: opacity .15s; }
+  .grid a:hover img { opacity: .9; }
+
+  .empty { color: var(--muted); padding: 40px 0; text-align: center; }
+
+  /* lightbox */
+  .lb {
+    position: fixed; inset: 0; background: rgba(12,12,12,.96); z-index: 50;
+    display: none; align-items: center; justify-content: center; touch-action: none;
+  }
+  .lb.open { display: flex; }
+  .lb img { max-width: 95vw; max-height: 92vh; object-fit: contain; user-select: none; }
+  .lb button {
+    position: absolute; background: none; border: 0; color: #fff; cursor: pointer;
+    font-size: 28px; padding: 18px; opacity: .75; line-height: 1;
+  }
+  .lb button:hover { opacity: 1; }
+  .lb .x { top: 6px; right: 6px; }
+  .lb .p { left: 0; top: 50%; transform: translateY(-50%); font-size: 38px; }
+  .lb .n { right: 0; top: 50%; transform: translateY(-50%); font-size: 38px; }
+  .lb .ct {
+    position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
+    color: #bbb; font-size: 0.85rem;
+  }
+  @media (max-width: 600px) {
+    header, main { padding-left: 14px; padding-right: 14px; }
+    .grid { columns: 2 140px; column-gap: 8px; }
+    .grid a { margin-bottom: 8px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1 id="title"><a href="#/">Photos</a></h1>
+  <nav class="crumbs" id="crumbs"></nav>
+</header>
+<main id="main"><p class="empty">Loading…</p></main>
+
+<div class="lb" id="lb" aria-modal="true" role="dialog">
+  <button class="x" aria-label="Close" onclick="closeLB()">&#10005;</button>
+  <button class="p" aria-label="Previous" onclick="step(-1)">&#8249;</button>
+  <button class="n" aria-label="Next" onclick="step(1)">&#8250;</button>
+  <img id="lbimg" alt="">
+  <div class="ct" id="lbct"></div>
+</div>
+
+<script>
+let MANIFEST = null;
+let current = { photos: [], idx: -1 };
+
+const $ = id => document.getElementById(id);
+const esc = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+
+function findAlbum(path) {
+  let node = MANIFEST.root;
+  if (!path) return node;
+  for (const seg of path.split('/')) {
+    node = (node.albums || []).find(a => a.path.split('/').pop() === seg);
+    if (!node) return null;
+  }
+  return node;
+}
+
+function route() {
+  const hash = decodeURIComponent(location.hash.replace(/^#\/?/, '')).replace(/\/+$/, '');
+  const album = findAlbum(hash);
+  if (!album) { location.hash = '#/'; return; }
+  render(album);
+}
+
+function render(album) {
+  // breadcrumbs
+  const crumbs = $('crumbs');
+  if (album.path) {
+    const segs = album.path.split('/');
+    let acc = '', html = '<a href="#/">Home</a>';
+    segs.forEach((seg, i) => {
+      acc += (acc ? '/' : '') + seg;
+      html += '<span class="sep">/</span>';
+      html += i === segs.length - 1
+        ? '<span class="here">' + esc(seg.replace(/_/g, ' ')) + '</span>'
+        : '<a href="#/' + encodeURIComponent(acc).replace(/%2F/g, '/') + '">' + esc(seg.replace(/_/g, ' ')) + '</a>';
+    });
+    crumbs.innerHTML = html;
+  } else {
+    crumbs.innerHTML = '';
+  }
+
+  let html = '';
+  if (album.albums.length) {
+    html += '<div class="albums">' + album.albums.map(a =>
+      '<a class="album" href="#/' + encodeURIComponent(a.path).replace(/%2F/g, '/') + '">' +
+        '<div class="cov">' + (a.cover ? '<img loading="lazy" src="' + a.cover + '" alt="">' : '') + '</div>' +
+        '<div class="meta"><b>' + esc(a.name) + '</b><span>' + a.count + ' photo' + (a.count === 1 ? '' : 's') + '</span></div>' +
+      '</a>').join('') + '</div>';
+  }
+  if (album.photos.length) {
+    html += '<div class="grid">' + album.photos.map((p, i) =>
+      '<a href="' + p.i + '" data-i="' + i + '">' +
+        '<img loading="lazy" src="' + p.t + '" width="' + p.w + '" height="' + p.h + '" alt="' + esc(p.name) + '">' +
+      '</a>').join('') + '</div>';
+  }
+  if (!html) html = '<p class="empty">This album is empty.</p>';
+  $('main').innerHTML = html;
+
+  current.photos = album.photos;
+  const grid = document.querySelector('.grid');
+  if (grid) grid.addEventListener('click', e => {
+    const a = e.target.closest('a[data-i]');
+    if (!a) return;
+    e.preventDefault();
+    openLB(+a.dataset.i);
+  });
+  window.scrollTo(0, 0);
+}
+
+/* ---- lightbox ---- */
+function openLB(i) {
+  current.idx = i;
+  show();
+  $('lb').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeLB() {
+  $('lb').classList.remove('open');
+  document.body.style.overflow = '';
+  current.idx = -1;
+}
+function step(d) {
+  const n = current.photos.length;
+  current.idx = (current.idx + d + n) % n;
+  show();
+}
+function show() {
+  const p = current.photos[current.idx];
+  $('lbimg').src = p.i;
+  $('lbct').textContent = (current.idx + 1) + ' / ' + current.photos.length;
+  // preload neighbours
+  [1, -1].forEach(d => {
+    const q = current.photos[(current.idx + d + current.photos.length) % current.photos.length];
+    if (q) new Image().src = q.i;
+  });
+}
+document.addEventListener('keydown', e => {
+  if (current.idx < 0) return;
+  if (e.key === 'Escape') closeLB();
+  if (e.key === 'ArrowRight') step(1);
+  if (e.key === 'ArrowLeft') step(-1);
+});
+$('lb').addEventListener('click', e => { if (e.target === $('lb')) closeLB(); });
+// touch swipe
+let tx = null;
+$('lb').addEventListener('touchstart', e => { tx = e.touches[0].clientX; }, { passive: true });
+$('lb').addEventListener('touchend', e => {
+  if (tx === null) return;
+  const dx = e.changedTouches[0].clientX - tx;
+  if (Math.abs(dx) > 40) step(dx < 0 ? 1 : -1);
+  tx = null;
+}, { passive: true });
+
+/* ---- boot ---- */
+fetch('manifest.json')
+  .then(r => r.json())
+  .then(m => {
+    MANIFEST = m;
+    document.title = m.title;
+    $('title').innerHTML = '<a href="#/">' + esc(m.title) + '</a>';
+    window.addEventListener('hashchange', route);
+    route();
+  })
+  .catch(() => { $('main').innerHTML = '<p class="empty">Could not load gallery data.</p>'; });
+</script>
+</body>
+</html>
