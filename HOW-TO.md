@@ -43,6 +43,21 @@ That's it: **add → `./scripts/publish.sh` → commit & push.**
 - **Home banner:** replace `site/banner.jpg` (a wide ~2000px image), then publish.
 - **Colors:** the `:root` block near the top of `site/index.html`.
 
+## Renaming an album folder (important)
+
+A folder name is baked into each image's storage address, so renaming a folder
+and running publish would re-upload every photo in it. To rename **without** a
+mass re-upload:
+
+1. Rename the local folder (e.g. `photos/Photos` -> `photos/Scrapbook`).
+2. `python3 scripts/rename_album.py Photos Scrapbook` — moves the images inside
+   R2 (fast, server-side, no re-upload) and updates the build cache.
+3. `./scripts/publish.sh` — rebuilds the index (should report `0 uploaded`).
+4. Commit & push in GitHub Desktop.
+
+To delete stray image objects from R2 (e.g. cleanup), use
+`python3 scripts/prune_r2.py i/SomeName/ t/SomeName/`.
+
 ## Good to know
 
 - **Where things live:** photos on your Mac/NAS, resized images in R2, code on
