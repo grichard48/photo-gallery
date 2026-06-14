@@ -1,12 +1,28 @@
 {
-  // Cloudflare Workers config: serve the built gallery as static assets.
-  // The photo build itself runs via the project's Build command
-  // (pip install -r requirements.txt && python3 scripts/build.py).
+  // Cloudflare Worker that serves the photo gallery.
+  //
+  // Images live in the R2 bucket and are streamed by scripts/worker.js at the
+  // paths /i/<...> (web) and /t/<...> (thumbnails). The small static shell
+  // (index.html, manifest.json, banner.jpg) is served from dist/ as assets.
+  //
+  // Build + upload happens locally: `python3 scripts/build.py`.
+  // Deploy with: `npx wrangler deploy`  (or scripts/publish.sh does both).
   "name": "photo-gallery",
+  "main": "scripts/worker.js",
   "compatibility_date": "2026-06-12",
   "assets": {
     "directory": "dist",
+    "binding": "ASSETS",
     "html_handling": "auto-trailing-slash",
-    "not_found_handling": "single-page-application"
-  }
+    "not_found_handling": "single-page-application",
+    // Run the Worker on every request so it can intercept /i/ and /t/;
+    // non-image requests are delegated back to ASSETS by the Worker.
+    "run_worker_first": true
+  },
+  "r2_buckets": [
+    {
+      "binding": "BUCKET",
+      "bucket_name": "photo-gallery"
+    }
+  ]
 }

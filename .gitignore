@@ -1,4 +1,17 @@
-dist/
+# Source photos live on your Mac / NAS, not in git
+photos/
+
+# Local-only files
+.build-cache.json
+.env
 __pycache__/
 .DS_Store
 Thumbs.db
+
+# dist/ holds generated output. The resized images are served from R2, so we
+# ignore everything in dist EXCEPT the small shell that Cloudflare deploys.
+dist/*
+!dist/index.html
+!dist/manifest.json
+!dist/banner.jpg
+!dist/_headers

@@ -1,0 +1,6 @@
+/t/*
+  Cache-Control: public, max-age=604800
+/i/*
+  Cache-Control: public, max-age=604800
+/manifest.json
+  Cache-Control: no-cache
