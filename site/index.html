@@ -6,8 +6,8 @@
 <title>Scrapbook</title>
 <style>
   :root {
-    --bg: #000000; --fg: #f2f2f2; --muted: #9aa0a6; --line: #2a2a2a;
-    --card: #161616; --accent: #60a5fa;
+    --bg: #0a0a0a; --fg: #f2f2f2; --muted: #9aa0a6; --line: #2a2a2a;
+    --card: #161616; --accent: #2dd4bf;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -21,7 +21,8 @@
   }
   h1 { font-size: 1.35rem; font-weight: 650; letter-spacing: -0.01em; }
   nav.crumbs { margin-top: 6px; font-size: 0.92rem; color: var(--muted); }
-  nav.crumbs a:hover { color: var(--accent); }
+  nav.crumbs a { color: var(--accent); }
+  nav.crumbs a:hover { text-decoration: underline; }
   nav.crumbs .sep { margin: 0 6px; color: var(--line); }
   nav.crumbs .here { color: var(--fg); font-weight: 550; }
 
