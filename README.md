@@ -37,6 +37,10 @@ Folder names become album titles; underscores display as spaces (`Spring_Garden`
 filename); albums sort alphabetically, except folders named after months, which
 sort chronologically (March before April before May).
 
+For a deeper walkthrough of how the page navigation, the photo tree, the
+thumbnail grid, and the lightbox are built, see [`ARCHITECTURE.md`](ARCHITECTURE.md).
+Day-to-day usage lives in [`HOW-TO.md`](HOW-TO.md).
+
 ## Publishing (adding photos, changing the title, etc.)
 
 Two steps — upload the images, then push to deploy:

@@ -75,6 +75,15 @@
     position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
     color: #bbb; font-size: 0.85rem;
   }
+  .lb .ib { top: 6px; left: 6px; font-size: 24px; }
+  .lb .info {
+    position: absolute; bottom: 48px; left: 12px; max-width: min(80vw, 360px);
+    background: rgba(0,0,0,.55); border: 1px solid var(--line);
+    border-radius: 8px; padding: 9px 12px; color: var(--fg);
+    font-size: 0.85rem; line-height: 1.5;
+  }
+  .lb .info .fn { font-weight: 600; word-break: break-all; }
+  .lb .info .sub { color: var(--muted); margin-top: 2px; }
   @media (max-width: 600px) {
     header, main { padding-left: 14px; padding-right: 14px; }
     .banner { padding-left: 14px; padding-right: 14px; }
@@ -95,15 +104,18 @@
 
 <div class="lb" id="lb" aria-modal="true" role="dialog">
   <button class="x" aria-label="Close" onclick="closeLB()">&#10005;</button>
+  <button class="ib" aria-label="Photo info (i)" aria-pressed="false" onclick="toggleInfo()">&#9432;</button>
   <button class="p" aria-label="Previous" onclick="step(-1)">&#8249;</button>
   <button class="n" aria-label="Next" onclick="step(1)">&#8250;</button>
   <img id="lbimg" alt="">
+  <div class="info" id="lbinfo" hidden></div>
   <div class="ct" id="lbct"></div>
 </div>
 
 <script>
 let MANIFEST = null;
 let current = { photos: [], idx: -1 };
+let infoOn = false;
 
 const $ = id => document.getElementById(id);
 const esc = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
@@ -196,17 +208,41 @@ function show() {
   const p = current.photos[current.idx];
   $('lbimg').src = p.i;
   $('lbct').textContent = (current.idx + 1) + ' / ' + current.photos.length;
+  renderInfo();
   // preload neighbours
   [1, -1].forEach(d => {
     const q = current.photos[(current.idx + d + current.photos.length) % current.photos.length];
     if (q) new Image().src = q.i;
   });
 }
+function fmtDate(d) {
+  if (!d) return '';
+  return d.slice(0, 10).replace(/:/g, '-') + (d.length > 10 ? ' ' + d.slice(11, 16) : '');
+}
+function renderInfo() {
+  const box = $('lbinfo');
+  const p = current.photos[current.idx];
+  if (!infoOn || !p) { box.hidden = true; return; }
+  const file = decodeURIComponent(p.i.split('/').pop());
+  const date = fmtDate(p.d);
+  let h = '<div class="fn">' + esc(file) + '</div>';
+  if (date) h += '<div class="sub">' + esc(date) + '</div>';
+  h += '<div class="sub">' + p.w + ' × ' + p.h + '</div>';
+  box.innerHTML = h;
+  box.hidden = false;
+}
+function toggleInfo() {
+  infoOn = !infoOn;
+  const btn = document.querySelector('.lb .ib');
+  if (btn) btn.setAttribute('aria-pressed', infoOn ? 'true' : 'false');
+  renderInfo();
+}
 document.addEventListener('keydown', e => {
   if (current.idx < 0) return;
   if (e.key === 'Escape') closeLB();
   if (e.key === 'ArrowRight') step(1);
   if (e.key === 'ArrowLeft') step(-1);
+  if (e.key === 'i' || e.key === 'I') toggleInfo();
 });
 $('lb').addEventListener('click', e => { if (e.target === $('lb')) closeLB(); });
 // touch swipe
