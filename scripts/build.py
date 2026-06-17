@@ -216,6 +216,18 @@ def list_photos(dir_path: Path):
             yield entry, entry.relative_to(SRC)
 
 
+def _find_thumb(photos, albums, stem):
+    """Depth-first search for a photo whose filename stem matches `stem`."""
+    for p in photos:
+        if Path(p["i"].rsplit("/", 1)[-1]).stem.lower() == stem:
+            return p["t"]
+    for a in albums:
+        hit = _find_thumb(a["photos"], a["albums"], stem)
+        if hit:
+            return hit
+    return None
+
+
 def build_album(dir_path: Path, meta: dict) -> dict:
     rel = dir_path.relative_to(SRC)
     entries = sorted(dir_path.iterdir(), key=lambda p: natural_key(p.name))
@@ -238,6 +250,23 @@ def build_album(dir_path: Path, meta: dict) -> dict:
 
     count = len(photos) + sum(a["count"] for a in albums)
     cover = photos[0]["t"] if photos else (albums[0]["cover"] if albums else None)
+
+    # Optional: a ".cover" file naming an image overrides the auto-chosen cover.
+    # The image can live directly in this folder or anywhere beneath it.
+    marker = dir_path / ".cover"
+    if marker.exists():
+        try:
+            target = marker.read_text(encoding="utf-8").strip()
+        except Exception:
+            target = ""
+        if target:
+            chosen = _find_thumb(photos, albums, Path(target).stem.lower())
+            if chosen:
+                cover = chosen
+            else:
+                print(f"  ! .cover in '{rel}': no photo named '{target}' found",
+                      file=sys.stderr)
+
     return {
         "name": display_name(rel.name) if rel.name else "Home",
         "path": rel.as_posix() if rel.name else "",

@@ -250,6 +250,40 @@ touch-down X and pages if the finger moves more than 40px. Buttons carry
 `aria-label`s and the overlay is `role="dialog"` / `aria-modal` for screen
 readers.
 
+### The info panel
+
+The lightbox also has an optional info panel, toggled with the `i` key or the
+ⓘ button (for touch). A module-level flag `infoOn` remembers whether it's open,
+and `renderInfo` fills it from the current photo's manifest entry:
+
+```javascript
+function renderInfo() {
+  const box = $('lbinfo');
+  const p = current.photos[current.idx];
+  if (!infoOn || !p) { box.hidden = true; return; }
+  const file = decodeURIComponent(p.i.split('/').pop());   // filename from the URL
+  const date = fmtDate(p.d);                                // capture date, if any
+  let h = '<div class="fn">' + esc(file) + '</div>';
+  if (date) h += '<div class="sub">' + esc(date) + '</div>';
+  h += '<div class="sub">' + p.w + ' × ' + p.h + '</div>';
+  box.innerHTML = h;
+  box.hidden = false;
+}
+```
+
+All of this data is already in the manifest — there's no extra lookup. The
+filename comes from the tail of the photo's `i` URL (so the extension reads as the
+published `.jpg`), the dimensions from `w`/`h`, and the date from `d`. The date
+line is only added when `d` is non-empty, so photos with an embedded EXIF capture
+date show one and the older imports (whose date field is blank) simply show
+filename and size. `show()` calls `renderInfo()` on every photo change, so the
+panel stays in sync as you page, and the flag persists so it stays open until you
+toggle it off.
+
+Note that `d` is the EXIF `DateTimeOriginal` captured at build time, not the
+file's write date — so it reflects when a photo was actually taken, where that
+metadata survives.
+
 ## The pipeline in one line
 
 `build.py` walks your folders and freezes an ordered tree into `manifest.json`;

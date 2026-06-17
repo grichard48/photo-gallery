@@ -43,6 +43,49 @@ That's it: **add → `./scripts/publish.sh` → commit & push.**
 - **Home banner:** replace `site/banner.jpg` (a wide ~2000px image), then publish.
 - **Colors:** the `:root` block near the top of `site/index.html`.
 
+## Choosing an album's cover photo
+
+By default an album's cover is its first photo (earliest capture date, then
+filename). To pick a specific one, put a file named `.cover` in that folder
+containing just the chosen image's filename, then publish. For example, to make
+`_DSF2643.jpg` the cover of the August album:
+
+```
+echo "_DSF2643.jpg" > photos/Scrapbook/Seattle/2015/August/.cover
+```
+
+Notes:
+
+- The match ignores case and extension, so `_DSF2643`, `_dsf2643.jpg`, and
+  `_DSF2643.JPG` all work.
+- It works at any level. A `.cover` on a container folder (like `Seattle`) may
+  name any photo anywhere beneath it.
+- If the named photo isn't found, the build prints a warning and falls back to
+  the default cover.
+- `.cover` is a hidden file and isn't treated as a photo or uploaded — it just
+  guides the build. Applying it only needs a publish (no re-upload), then a push.
+
+## Removing photos
+
+Delete the images from `photos/` and publish as usual — they disappear from the
+gallery right away. Their resized copies, though, stay in R2 (the build only ever
+adds), so they linger as harmless orphans taking a little storage.
+
+To clean those up, after publishing run:
+
+```
+python3 scripts/prune_orphans.py --dry-run   # preview what would be deleted
+python3 scripts/prune_orphans.py             # delete them (asks to confirm)
+```
+
+It compares the live `dist/manifest.json` against everything in the bucket and
+removes only objects nothing points at anymore. Always publish first so the
+manifest reflects your deletions; the script refuses to run on an empty manifest
+and warns if a prune would remove an unusually large share of the bucket.
+
+So the full remove-and-clean flow is: delete from `photos/` -> `./scripts/publish.sh`
+-> commit & push -> `python3 scripts/prune_orphans.py`.
+
 ## Renaming an album folder (important)
 
 A folder name is baked into each image's storage address, so renaming a folder
